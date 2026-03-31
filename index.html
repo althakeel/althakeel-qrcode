@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Poster Generator</title>
+<style>
+:root {
+  --bg: #131313;
+  --bg-soft: #1c1c1c;
+  --panel: rgba(239, 229, 214, 0.96);
+  --panel-strong: #f7f1e8;
+  --text: #161515;
+  --muted: #62584d;
+  --line: rgba(22, 21, 21, 0.12);
+  --accent: #d95f3f;
+  --accent-deep: #b5492f;
+  --shadow: 0 30px 80px rgba(0, 0, 0, 0.34);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 28px;
+  color: var(--text);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  background:
+    radial-gradient(circle at top right, rgba(217, 95, 63, 0.18), transparent 22%),
+    radial-gradient(circle at bottom left, rgba(255, 230, 184, 0.08), transparent 28%),
+    linear-gradient(135deg, #101010 0%, #171717 46%, #222 100%);
+}
+
+.shell {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  min-height: calc(100vh - 56px);
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 22px;
+  align-items: center;
+}
+
+.panel {
+  border-radius: 30px;
+  box-shadow: var(--shadow);
+}
+
+.intro {
+  position: relative;
+  overflow: hidden;
+  min-height: 680px;
+  padding: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, #202020 0%, var(--bg-soft) 100%);
+  color: #f8f1e7;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.intro::before,
+.intro::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.intro::before {
+  width: 320px;
+  height: 320px;
+  top: -90px;
+  right: -70px;
+  background: radial-gradient(circle, rgba(217, 95, 63, 0.28), transparent 68%);
+}
+
+.intro::after {
+  width: 240px;
+  height: 240px;
+  bottom: -70px;
+  left: -50px;
+  background: radial-gradient(circle, rgba(255, 236, 206, 0.1), transparent 70%);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-bottom: 18px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(248, 241, 231, 0.74);
+  font: 600 12px/1.1 Arial, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 14px;
+  max-width: 9ch;
+  font-size: clamp(3rem, 7vw, 6rem);
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+}
+
+.lead {
+  margin: 0 0 28px;
+  max-width: 32ch;
+  color: rgba(248, 241, 231, 0.7);
+  font: 400 17px/1.7 Arial, sans-serif;
+}
+
+.stat-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  min-width: 132px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stat strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #fff4e8;
+  font-size: 1.35rem;
+}
+
+.stat span {
+  color: rgba(248, 241, 231, 0.68);
+  font-size: 0.88rem;
+}
+
+.qr-card {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-strong) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.control-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-title {
+  margin: 0;
+  font: 700 1.3rem/1.1 Arial, sans-serif;
+}
+
+.pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(217, 95, 63, 0.12);
+  color: var(--accent-deep);
+  font: 700 12px/1 Arial, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.input-label {
+  font: 600 12px/1.1 Arial, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.controls {
+  display: flex;
+  gap: 12px;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  padding: 18px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(22, 21, 21, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text);
+  font: 500 16px/1.2 Arial, sans-serif;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+input:focus {
+  border-color: rgba(217, 95, 63, 0.5);
+  box-shadow: 0 0 0 4px rgba(217, 95, 63, 0.12);
+}
+
+button {
+  padding: 18px 24px;
+  border: none;
+  border-radius: 16px;
+  background: var(--accent);
+  color: #fff4ea;
+  font: 600 15px/1 Arial, sans-serif;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 16px 34px rgba(217, 95, 63, 0.28);
+}
+
+.secondary-button {
+  background: rgba(22, 21, 21, 0.08);
+  color: var(--text);
+  box-shadow: none;
+}
+
+button:hover {
+  background: var(--accent-deep);
+  transform: translateY(-1px);
+}
+
+.secondary-button:hover {
+  background: rgba(22, 21, 21, 0.14);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.helper {
+  margin: 0;
+  color: var(--muted);
+  font: 400 14px/1.6 Arial, sans-serif;
+}
+
+#qrcode {
+  position: relative;
+  min-height: 410px;
+  display: grid;
+  place-items: center;
+  padding: 26px;
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(253, 247, 239, 0.98));
+  border: 1px solid rgba(22, 21, 21, 0.08);
+}
+
+#qrcode::before {
+  content: "Scan Preview";
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(22, 21, 21, 0.06);
+  color: var(--muted);
+  font: 700 11px/1 Arial, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+canvas {
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(33, 24, 14, 0.14);
+  animation: fadeUp 260ms ease;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .intro,
+  .qr-card {
+    padding: 24px;
+  }
+
+  .intro {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  body {
+    padding: 18px;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  #qrcode {
+    min-height: 320px;
+  }
+}
+</style>
+</head>
+<body>
+
+<main class="shell">
+  <section class="panel intro">
+    <div class="eyebrow">QR Poster</div>
+    <h1>Build a QR that feels like part of the brand.</h1>
+    <p class="lead">This version uses a darker stage and a bolder preview card so the page feels more like a campaign asset than a plain utility tool.</p>
+    <div class="stat-row">
+      <div class="stat">
+        <strong>Fast</strong>
+        <span>Generate instantly from any URL or text.</span>
+      </div>
+      <div class="stat">
+        <strong>Clean</strong>
+        <span>Focused layout with a stronger visual frame.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel qr-card">
+    <div class="card-top">
+      <h2 class="card-title">Create Your Code</h2>
+      <div class="pill">Live Preview</div>
+    </div>
+    <div class="control-stack">
+      <label class="input-label" for="text">Website or Text</label>
+      <div class="controls">
+        <input type="text" id="text" value="https://store1920.com" placeholder="Enter URL or text">
+        <button id="generateBtn">Generate</button>
+      </div>
+      <div class="button-group">
+        <button id="downloadPngBtn" class="secondary-button">Download PNG</button>
+        <button id="downloadSvgBtn" class="secondary-button">Download SVG</button>
+      </div>
+      <p class="helper">Paste a storefront, product page, contact link, or any short message.</p>
+    </div>
+    <div id="qrcode"></div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
+<script>
+let currentCanvas = null;
+let currentSvgMarkup = '';
+let currentRenderPromise = Promise.resolve();
+const centerLogoSvg = String.raw`<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 688 451.63">
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <g>
+        <path d="M7.66,176.85c-8.64-4.03-9.51-11.81-4.9-20.45l2.59-4.03c4.03-7.49,10.66-8.35,18.15-4.61,10.37,4.9,21.6,8.35,31.4,8.35,16.42,0,22.47-5.18,22.47-12.96,0-23.33-76.04-8.06-76.04-61.06,0-27.65,25.92-43.2,57.03-43.2,15.84,0,29.67,2.59,42.34,8.06,8.93,4.03,10.37,11.52,5.47,20.45l-2.3,4.03c-4.32,7.2-10.66,8.35-18.43,4.9-8.06-3.74-16.42-6.34-24.48-6.34-12.67,0-19.59,4.9-19.59,11.81,0,22.75,76.04,8.93,76.04,61.35,0,27.08-23.04,44.07-61.06,44.07-18.15,0-35.14-3.46-48.68-10.37Z"/>
+        <path d="M208.12,184.34c-32.84,0-52.13-20.74-52.13-54.15v-54.15h-10.95c-10.08,0-15.27-5.47-15.27-15.55v-3.17c0-10.08,5.19-15.55,15.27-15.55h10.95v-25.63c0-10.37,5.76-16.13,16.13-16.13h8.07c10.37,0,16.13,5.76,16.13,16.13v25.63h22.47c10.08,0,15.84,5.47,15.84,15.55v3.17c0,10.08-5.76,15.55-15.84,15.55h-22.47v50.12c0,18.15,8.35,23.91,20.16,23.91h4.9c8.64,0,13.25,5.47,13.25,15.55v3.17c0,10.08-6.34,15.55-16.71,15.55h-9.79Z"/>
+        <path d="M526.4,51.27v14.98c0,8.35-4.9,13.25-14.11,13.25-21.31,0-36.01,13.83-36.01,44.93v43.78c0,10.37-5.76,16.13-16.42,16.13h-7.78c-10.66,0-16.42-5.76-16.42-16.13V57.89c0-10.37,5.76-16.13,16.42-16.13h7.78c10.66,0,16.42,5.76,16.42,16.13v4.9c9.51-16.71,23.62-23.91,38.6-23.91,7.49,0,11.52,4.32,11.52,12.39Z"/>
+        <path d="M670.7,125.01h-90.15c4.61,19.87,20.45,31.11,38.31,31.11,12.96,0,21.31-4.61,30.24-11.52,6.62-4.9,11.52-4.32,17,3.74l3.74,6.05c4.03,6.34,3.46,12.96-3.74,18.43-11.52,8.64-28.23,14.4-48.1,14.4-42.34,0-77.48-28.23-77.48-74.02s31.4-74.31,74.6-74.31c39.46,0,72.01,25.06,72.01,69.42,0,11.23-6.62,16.71-16.42,16.71ZM580.55,99.95h68.55c-3.74-19.59-16.99-30.24-33.99-30.24s-30.53,10.95-34.56,30.24Z"/>
+        <g>
+          <path d="M314.55,103.07c1.73,0,3.14-1.41,3.14-3.14v-9.42h-6.28v9.42c0,1.73,1.41,3.14,3.14,3.14Z"/>
+          <path d="M342.82,99.93c0,1.73,1.41,3.14,3.14,3.14s3.14-1.41,3.14-3.14v-9.42h-6.28v9.42Z"/>
+          <path d="M330.25,65.37c-6.94,0-12.56,5.62-12.56,12.56v12.56h25.13v-12.56c0-6.94-5.63-12.56-12.56-12.56Z"/>
+          <path d="M330.25,38.88c-44.07,0-77.48,32.26-77.48,74.31s33.41,74.02,77.48,74.02,77.77-31.97,77.77-74.02-33.41-74.31-77.77-74.31ZM359.63,159.6h-58.77c-.78,0-1.55-.06-2.32-.17-8.58-1.28-14.49-9.28-13.21-17.86l6.45-43.05c.69-4.61,4.65-8.02,9.32-8.02h10.3v-12.56c0-10.41,8.44-18.85,18.85-18.85s18.85,8.44,18.85,18.85v12.56h10.3c4.66,0,8.62,3.41,9.31,8.02l6.46,43.05c.12.77.17,1.55.17,2.33,0,8.67-7.03,15.7-15.71,15.7Z"/>
+        </g>
+      </g>
+      <g>
+        <path d="M71.71,446.81c-12.53,0-19.28-6.75-19.28-19.28v-152.31l-20.24,16.39c-8.35,6.75-16.07,5.78-22.49-2.57l-4.82-5.78c-6.43-8.35-5.46-16.07,2.89-22.81l39.84-32.13c5.78-4.82,10.6-6.43,17.35-6.43h15.74c12.53,0,19.28,6.75,19.28,19.28v186.37c0,12.53-6.75,19.28-19.28,19.28h-9Z"/>
+        <path d="M301.45,292.25c0,20.24-4.5,38.88-20.89,66.51l-44.34,74.87c-4.82,9-10.93,13.17-20.56,13.17h-13.17c-9.96,0-15.1-4.5-15.1-11.89,0-3.21.96-7.07,3.21-11.25l36.31-59.44c-5.14.96-10.6,1.61-16.71,1.61-39.84,0-74.23-27.63-74.23-73.26s34.7-75.51,82.9-75.51,82.58,31.81,82.58,75.19ZM254.22,292.25c0-20.24-15.1-33.74-35.02-33.74s-35.99,13.5-35.99,33.74c0,21.53,16.07,34.7,35.67,34.7s35.35-14.14,35.35-34.7Z"/>
+        <path d="M342.58,446.81c-12.21,0-18.96-6.75-18.96-19.28v-6.43c0-8.68,2.57-14.14,8.68-20.24l57.52-58.16c20.56-20.24,31.81-34.7,31.81-53.66,0-17.35-11.57-27.63-28.92-27.63-10.93,0-21.85,3.53-33.74,11.57-8.03,5.78-14.78,4.5-20.56-3.86l-4.82-7.39c-6.75-10.28-6.43-19.92,3.86-26.99,16.71-11.57,36.31-17.67,58.16-17.67,42.09,0,73.58,24.42,73.58,69.73,0,33.1-17.67,54.95-43.06,79.69l-36.31,35.99h59.44c12.53,0,19.28,6.75,19.28,18.96v6.1c0,12.53-6.75,19.28-19.28,19.28h-106.68Z"/>
+        <g>
+          <path d="M609.08,218.36c-1.1.75-2.61.57-3.5-.47-.02-.02-.04-.04-.06-.06-3.91-.5-7.91-.77-11.99-.77-.36,0-.72.01-1.08.01-4.52,4.63-7.7,14.05-7.7,24.63,0,3.52.35,6.9.99,10.03,7.91-3.44,18-2.3,24.45,3.43l23.87,21.19c3.27,2.9,5.08,6.71,5.08,10.67v107.7c0,7.77-7.64,14.07-17.07,14.07h-53.79c-9.43,0-17.07-6.3-17.07-14.07v-107.68c0-3.97,1.83-7.79,5.11-10.7l23.99-21.21c.19-.17.41-.32.61-.48-.96-3.96-1.49-8.33-1.49-12.95,0-9.72,2.34-18.33,6.12-24.32-51.06,4.24-86.83,49.4-86.83,116.95s39.52,117.28,94.79,117.28,94.47-46.59,94.47-117.28c0-64.12-32.22-108.06-78.92-115.99Z"/>
+          <path d="M601.69,268.64c-1.84-1.53-4.2-2.45-6.78-2.45-.81,0-1.59.1-2.34.27,1.86,1.86,3.93,2.92,6.11,2.92,1.01,0,2.02-.26,3.02-.73Z"/>
+          <path d="M584.3,276.8c0,5.86,4.75,10.61,10.61,10.61s10.61-4.75,10.61-10.61c0-1.33-.26-2.61-.71-3.78-1.95,1.09-4.02,1.66-6.14,1.66-4.09,0-7.84-2.09-10.93-5.69-2.11,1.94-3.45,4.72-3.45,7.81Z"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>`;
+let centerLogoParts = null;
+let centerLogoImagePromise = null;
+
+function getCenterLogoParts() {
+  if (centerLogoParts) {
+    return centerLogoParts;
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(centerLogoSvg, 'image/svg+xml');
+  const svg = doc.documentElement;
+  centerLogoParts = {
+    viewBox: svg.getAttribute('viewBox') || '0 0 688 451.63',
+    content: svg.innerHTML
+  };
+
+  return centerLogoParts;
+}
+
+function loadCenterLogoImage() {
+  if (centerLogoImagePromise) {
+    return centerLogoImagePromise;
+  }
+
+  centerLogoImagePromise = new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(centerLogoSvg);
+  });
+
+  return centerLogoImagePromise;
+}
+
+function getCenterLogoPlacement(size) {
+  const logoWidth = size * 0.44;
+  const logoHeight = size * 0.18;
+  const clearPaddingX = 0;
+  const clearPaddingY = 0;
+
+  return {
+    logoWidth,
+    logoHeight,
+    logoX: (size - logoWidth) / 2,
+    logoY: (size - logoHeight) / 2,
+    clearX: (size - logoWidth) / 2 - clearPaddingX,
+    clearY: (size - logoHeight) / 2 - clearPaddingY,
+    clearWidth: logoWidth + clearPaddingX * 2,
+    clearHeight: logoHeight + clearPaddingY * 2
+  };
+}
+
+function sanitizeFilename(text) {
+  const normalized = text
+    .replace(/^https?:\/\//i, '')
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
+
+  return normalized || 'qr-code';
+}
+
+function triggerDownload(url, fileName) {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function buildStyledSvg(qr, size) {
+  const modules = qr.getModuleCount();
+  const quietZone = 4;
+  const totalModules = modules + quietZone * 2;
+  const moduleSize = size / totalModules;
+  const parts = [];
+  const logoPlacement = getCenterLogoPlacement(size);
+
+  function isInFinderPattern(row, col) {
+    const inTopLeft = row < 7 && col < 7;
+    const inTopRight = row < 7 && col >= modules - 7;
+    const inBottomLeft = row >= modules - 7 && col < 7;
+    return inTopLeft || inTopRight || inBottomLeft;
+  }
+
+  function isInLogoArea(row, col) {
+    const x = (col + quietZone) * moduleSize;
+    const y = (row + quietZone) * moduleSize;
+    return !(
+      x + moduleSize <= logoPlacement.clearX ||
+      x >= logoPlacement.clearX + logoPlacement.clearWidth ||
+      y + moduleSize <= logoPlacement.clearY ||
+      y >= logoPlacement.clearY + logoPlacement.clearHeight
+    );
+  }
+
+  function addCircle(row, col) {
+    const cx = ((col + quietZone) * moduleSize + moduleSize / 2).toFixed(2);
+    const cy = ((row + quietZone) * moduleSize + moduleSize / 2).toFixed(2);
+    const radius = (moduleSize * 0.44).toFixed(2);
+    parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + radius + '" fill="#000000" />');
+  }
+
+  function addFinderPattern(startRow, startCol) {
+    const x = ((startCol + quietZone) * moduleSize).toFixed(2);
+    const y = ((startRow + quietZone) * moduleSize).toFixed(2);
+    const outerSize = (moduleSize * 7).toFixed(2);
+    const middleOffset = ((startCol + quietZone + 1) * moduleSize).toFixed(2);
+    const middleY = ((startRow + quietZone + 1) * moduleSize).toFixed(2);
+    const middleSize = (moduleSize * 5).toFixed(2);
+    const innerOffset = ((startCol + quietZone + 2) * moduleSize).toFixed(2);
+    const innerY = ((startRow + quietZone + 2) * moduleSize).toFixed(2);
+    const innerSize = (moduleSize * 3).toFixed(2);
+    const outerRadius = (moduleSize * 1.8).toFixed(2);
+    const middleRadius = (moduleSize * 1.35).toFixed(2);
+    const innerRadius = (moduleSize * 0.95).toFixed(2);
+
+    parts.push('<rect x="' + x + '" y="' + y + '" width="' + outerSize + '" height="' + outerSize + '" rx="' + outerRadius + '" ry="' + outerRadius + '" fill="#000000" />');
+    parts.push('<rect x="' + middleOffset + '" y="' + middleY + '" width="' + middleSize + '" height="' + middleSize + '" rx="' + middleRadius + '" ry="' + middleRadius + '" fill="#ffffff" />');
+    parts.push('<rect x="' + innerOffset + '" y="' + innerY + '" width="' + innerSize + '" height="' + innerSize + '" rx="' + innerRadius + '" ry="' + innerRadius + '" fill="#000000" />');
+  }
+
+  function addCenterLogo() {
+    const logo = getCenterLogoParts();
+
+    parts.push('<svg x="' + logoPlacement.logoX.toFixed(2) + '" y="' + logoPlacement.logoY.toFixed(2) + '" width="' + logoPlacement.logoWidth.toFixed(2) + '" height="' + logoPlacement.logoHeight.toFixed(2) + '" viewBox="' + logo.viewBox + '" preserveAspectRatio="xMidYMid meet">' + logo.content + '</svg>');
+  }
+
+  for (let r = 0; r < modules; r++) {
+    for (let c = 0; c < modules; c++) {
+      if (!qr.isDark(r, c) || isInFinderPattern(r, c) || isInLogoArea(r, c)) {
+        continue;
+      }
+      addCircle(r, c);
+    }
+  }
+
+  addFinderPattern(0, 0);
+  addFinderPattern(0, modules - 7);
+  addFinderPattern(modules - 7, 0);
+  addCenterLogo();
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '">',
+    '<rect width="100%" height="100%" fill="#ffffff" />',
+    parts.join(''),
+    '</svg>'
+  ].join('');
+}
+
+async function generateStyledQR() {
+  const text = document.getElementById('text').value.trim();
+  if(!text){ alert("Enter text or URL"); return; }
+
+  const container = document.getElementById('qrcode');
+  container.innerHTML = '';
+
+  const qr = qrcode(4, 'H'); // Type 4, high error correction
+  qr.addData(text);
+  qr.make();
+
+  const size = 300;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  container.appendChild(canvas);
+  currentCanvas = canvas;
+  const ctx = canvas.getContext('2d');
+
+  const modules = qr.getModuleCount();
+  const quietZone = 4;
+  const moduleSize = size / (modules + quietZone * 2);
+  const offset = quietZone * moduleSize;
+  const logoPlacement = getCenterLogoPlacement(size);
+  currentSvgMarkup = buildStyledSvg(qr, size);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  function drawDot(row, col, color) {
+    const x = offset + col * moduleSize;
+    const y = offset + row * moduleSize;
+    const centerX = x + moduleSize / 2;
+    const centerY = y + moduleSize / 2;
+    const radius = moduleSize * 0.44;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawRoundedRect(x, y, width, height, radius, color) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, width, height, radius);
+    } else {
+      const safeRadius = Math.min(radius, width / 2, height / 2);
+      ctx.moveTo(x + safeRadius, y);
+      ctx.arcTo(x + width, y, x + width, y + height, safeRadius);
+      ctx.arcTo(x + width, y + height, x, y + height, safeRadius);
+      ctx.arcTo(x, y + height, x, y, safeRadius);
+      ctx.arcTo(x, y, x + width, y, safeRadius);
+    }
+    ctx.fill();
+  }
+
+  function isInFinderPattern(row, col) {
+    const inTopLeft = row < 7 && col < 7;
+    const inTopRight = row < 7 && col >= modules - 7;
+    const inBottomLeft = row >= modules - 7 && col < 7;
+    return inTopLeft || inTopRight || inBottomLeft;
+  }
+
+  function isInLogoArea(row, col) {
+    const x = offset + col * moduleSize;
+    const y = offset + row * moduleSize;
+    return !(
+      x + moduleSize <= logoPlacement.clearX ||
+      x >= logoPlacement.clearX + logoPlacement.clearWidth ||
+      y + moduleSize <= logoPlacement.clearY ||
+      y >= logoPlacement.clearY + logoPlacement.clearHeight
+    );
+  }
+
+  function drawFinderPattern(startRow, startCol) {
+    const x = offset + startCol * moduleSize;
+    const y = offset + startRow * moduleSize;
+    drawRoundedRect(x, y, moduleSize * 7, moduleSize * 7, moduleSize * 1.8, '#000000');
+    drawRoundedRect(x + moduleSize, y + moduleSize, moduleSize * 5, moduleSize * 5, moduleSize * 1.35, '#ffffff');
+    drawRoundedRect(x + moduleSize * 2, y + moduleSize * 2, moduleSize * 3, moduleSize * 3, moduleSize * 0.95, '#000000');
+  }
+
+  async function drawCenterLogo() {
+    const logoImage = await loadCenterLogoImage();
+
+    ctx.drawImage(
+      logoImage,
+      logoPlacement.logoX,
+      logoPlacement.logoY,
+      logoPlacement.logoWidth,
+      logoPlacement.logoHeight
+    );
+  }
+
+  for (let r = 0; r < modules; r++) {
+    for (let c = 0; c < modules; c++) {
+      if (qr.isDark(r, c) && !isInFinderPattern(r, c) && !isInLogoArea(r, c)) {
+        drawDot(r, c, '#000000');
+      }
+    }
+  }
+
+  drawFinderPattern(0, 0);
+  drawFinderPattern(0, modules - 7);
+  drawFinderPattern(modules - 7, 0);
+  await drawCenterLogo();
+}
+
+document.getElementById('generateBtn').addEventListener('click', () => {
+  currentRenderPromise = generateStyledQR();
+});
+document.getElementById('downloadPngBtn').addEventListener('click', async () => {
+  if (!currentCanvas) {
+    currentRenderPromise = generateStyledQR();
+  }
+  await currentRenderPromise;
+
+  const fileName = sanitizeFilename(document.getElementById('text').value.trim()) + '.png';
+  triggerDownload(currentCanvas.toDataURL('image/png'), fileName);
+});
+
+document.getElementById('downloadSvgBtn').addEventListener('click', async () => {
+  if (!currentSvgMarkup) {
+    currentRenderPromise = generateStyledQR();
+  }
+  await currentRenderPromise;
+
+  const blob = new Blob([currentSvgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const fileName = sanitizeFilename(document.getElementById('text').value.trim()) + '.svg';
+  triggerDownload(url, fileName);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+});
+
+document.getElementById('text').addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    currentRenderPromise = generateStyledQR();
+  }
+});
+currentRenderPromise = generateStyledQR();
+</script>
+
+</body>
+</html>
